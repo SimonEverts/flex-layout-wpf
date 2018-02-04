@@ -1,0 +1,6 @@
+.vs/
+*.csproj.user
+src/FlexLayout.Wpf/bin/
+src/FlexLayout.Wpf/obj/
+test/TestApp/bin/
+test/TestApp/obj/
