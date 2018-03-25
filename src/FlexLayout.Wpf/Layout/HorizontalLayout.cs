@@ -26,6 +26,11 @@ namespace FlexibleLayout.Wpf.Layout
                 desiredSize.Width += (InternalChildren.Count - 1) * Spacing;
             }
 
+            if (desiredSize.Height > availableSize.Height)
+                desiredSize.Height = availableSize.Height;
+            if (desiredSize.Width > availableSize.Width)
+                desiredSize.Width = availableSize.Width;
+
             return desiredSize;
         }
 
