@@ -94,7 +94,7 @@ namespace FlexibleLayout.Wpf.Layout
                 foreach (UIElement child in InternalChildren)
                 {
                     var childWidth = child.DesiredSize.Width * scaleFactor;
-                    var availableChildSize = new Size(finalSize.Width, childWidth);
+                    var availableChildSize = new Size(childWidth, finalSize.Height);
                 
                     ArrangeChild(child, availableChildSize, new Point(x, 0));
                     x += childWidth + Spacing;
