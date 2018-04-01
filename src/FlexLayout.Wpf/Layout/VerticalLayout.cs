@@ -1,3 +1,4 @@
+using System;
 using System.Windows;
 
 namespace FlexibleLayout.Wpf.Layout
@@ -11,51 +12,58 @@ namespace FlexibleLayout.Wpf.Layout
         /// <returns>Desired space</returns>
         protected override Size MeasureOverride(Size availableSize)
         {
-            var availableContentSize = CalculateAvailableContentSize(availableSize);
+            (var availableContentSize, var spacing) = CalculateAvailableContentSize(availableSize);
 
             foreach (UIElement child in InternalChildren)
             {
                 child.Measure(availableContentSize);
             }
 
-            var desiredContentSize = CalculateDesiredContentSize();
+            // calculate total width and height from children
+            var desiredSize = CalculateDesiredSize(availableContentSize, spacing);
 
-            var desiredSize = desiredContentSize;
-            if (InternalChildren.Count > 1)
+            var flex = CalculateFlexHeight(availableContentSize.Height, out var flexTotalGrowCount, out var flexHeight);
+
+            if (flex)
             {
-                desiredSize.Height += (InternalChildren.Count - 1) * Spacing;
-            }
+                foreach (UIElement child in InternalChildren)
+                {
+                    var childHeight = child.DesiredSize.Height;
 
-            if (desiredSize.Height > availableSize.Height)
-                desiredSize.Height = availableSize.Height;
-            if (desiredSize.Width > availableSize.Width)
-                desiredSize.Width = availableSize.Width;
+                    var childIsFlex = GetFlex(child);
+                    if (childIsFlex)
+                    {
+                        var childFlexGrow = GetGrow(child);
+                        if (flexTotalGrowCount > 0)
+                            childHeight = flexHeight * (childFlexGrow / (double)flexTotalGrowCount);
+                    }
+
+                    var availableChildSize = new Size(availableContentSize.Width, childHeight);
+
+                    child.Measure(availableChildSize);
+                }
+            }
+            else
+            {
+                var scaleFactor = availableContentSize.Height / desiredSize.Height;
+
+                foreach (UIElement child in InternalChildren)
+                {
+                    var childHeight = child.DesiredSize.Height * scaleFactor;
+                    var availableChildSize = new Size(availableContentSize.Width, childHeight);
+
+                    child.Measure(availableChildSize);
+                }
+            }
 
             return desiredSize;
         }
 
-        /// <summary>
-        /// Arranges children based on space assigned to this layout
-        /// </summary>
-        /// <param name="finalSize"></param>
-        /// <returns></returns>
-        protected override Size ArrangeOverride(Size finalSize)
+        private bool CalculateFlexHeight(double finalChildrenHeight, out int flexTotalGrowCount, out double flexHeight)
         {
-            double y = 0;
-
-            double finalChildrenHeight = CalculateFinalContentHeight(finalSize);
-
-            var desiredContentSize = CalculateDesiredContentSize();
-
-            if (desiredContentSize.Width > finalSize.Width)
-                desiredContentSize.Width = finalSize.Width;
-
-            if (desiredContentSize.Height == 0)
-                return finalSize;
-
             var flex = false;
-            var flexTotalGrowCount = 0;
-            var flexHeight = finalChildrenHeight;
+            flexTotalGrowCount = 0;
+            flexHeight = finalChildrenHeight;
             foreach (UIElement child in InternalChildren)
             {
                 if (!GetFlex(child))
@@ -72,6 +80,27 @@ namespace FlexibleLayout.Wpf.Layout
                 flexTotalGrowCount += GetGrow(child);
             }
 
+            return flex;
+        }
+
+        /// <summary>
+        /// Arranges children based on space assigned to this layout
+        /// </summary>
+        /// <param name="finalSize"></param>
+        /// <returns></returns>
+        protected override Size ArrangeOverride(Size finalSize)
+        {
+            double y = 0;
+
+            (var availableContentSize, var spacing) = CalculateAvailableContentSize(finalSize);
+
+            var desiredSize = CalculateDesiredSize(availableContentSize, spacing);
+
+            if (desiredSize.Height == 0)
+                return finalSize;
+
+            var flex = CalculateFlexHeight(availableContentSize.Height, out var flexTotalGrowCount, out var flexHeight);
+
             if (flex)
             {
                 foreach (UIElement child in InternalChildren)
@@ -86,7 +115,7 @@ namespace FlexibleLayout.Wpf.Layout
                             childHeight = flexHeight * (childFlexGrow / (double)flexTotalGrowCount);
                     }
 
-                    var availableChildSize = new Size(finalSize.Width, childHeight);
+                    var availableChildSize = new Size(availableContentSize.Width, childHeight);
 
                     ArrangeChild(child, availableChildSize, new Point(0, y));
                     y += childHeight + Spacing;
@@ -94,12 +123,12 @@ namespace FlexibleLayout.Wpf.Layout
             }
             else
             {
-                var scaleFactor = finalChildrenHeight / desiredContentSize.Height;
+                var scaleFactor = availableContentSize.Height / desiredSize.Height;
 
                 foreach (UIElement child in InternalChildren)
                 {
                     var childHeight = child.DesiredSize.Height * scaleFactor;
-                    var availableChildSize = new Size(finalSize.Width, childHeight);
+                    var availableChildSize = new Size(availableContentSize.Width, childHeight);
                 
                     ArrangeChild(child, availableChildSize, new Point(0, y));
                     y += childHeight + Spacing;
@@ -146,32 +175,13 @@ namespace FlexibleLayout.Wpf.Layout
         }
 
         /// <summary>
-        /// Calculate size available for the children
+        /// Calculate content size
         /// </summary>
-        /// <param name="availableSize"></param>
-        /// <returns></returns>
-        private Size CalculateAvailableContentSize(Size availableSize)
+        private Size CalculateDesiredSize(Size availableContentSize, int spacing)
         {
-            if (InternalChildren.Count <= 1)
-                return availableSize;
+            var desiredSize = new Size(0, 0);
 
-            Size availableContentSize = new Size(availableSize.Width, 0);
-            
-            var spacingHeight = (InternalChildren.Count - 1) * Spacing;
-            if (availableSize.Height > spacingHeight)
-                availableContentSize.Height = availableSize.Height - spacingHeight;
-
-            return availableContentSize;
-        }
-
-        /// <summary>
-        /// Calculated desired size of the children
-        /// </summary>
-        /// <returns></returns>
-        private Size CalculateDesiredContentSize()
-        {
-            Size desiredSize = new Size(0,0);
-
+            // calculate total width and height from children
             foreach (UIElement child in InternalChildren)
             {
                 desiredSize.Height += child.DesiredSize.Height;
@@ -180,20 +190,33 @@ namespace FlexibleLayout.Wpf.Layout
                     desiredSize.Width = child.DesiredSize.Width;
             }
 
+            // Include spacing between children
+            if (InternalChildren.Count > 1)
+            {
+                desiredSize.Height += spacing;
+            }
+
+            // Limit to available size
+            if (desiredSize.Height > availableContentSize.Height)
+                desiredSize.Height = availableContentSize.Height;
+            if (desiredSize.Width > availableContentSize.Width)
+                desiredSize.Width = availableContentSize.Width;
+
             return desiredSize;
         }
 
-        private double CalculateFinalContentHeight(Size finalSize)
+        private (Size availableContentSize, int spacing) CalculateAvailableContentSize(Size availableSize)
         {
-            double childrenFinalHeight = finalSize.Height;
-            if (InternalChildren.Count > 1)
-            {
-                var spacingHeight = (InternalChildren.Count - 1) * Spacing;
-                if (spacingHeight <= childrenFinalHeight)
-                    childrenFinalHeight -= spacingHeight;
-            }
+            Size availableContentSize = new Size(availableSize.Width, 0);
 
-            return childrenFinalHeight;
+            if (InternalChildren.Count <= 1)
+                return (availableSize, 0);
+
+            var spacing = (InternalChildren.Count - 1) * Spacing;
+            if (availableSize.Height > spacing)
+                availableContentSize.Height = availableSize.Height - spacing;
+
+            return(availableContentSize, spacing);
         }
     }
 }

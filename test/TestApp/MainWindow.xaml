@@ -5,16 +5,60 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:layout="clr-namespace:FlexibleLayout.Wpf.Layout;assembly=FlexibleLayout.Wpf"
         mc:Ignorable="d"
-        Title="MainWindow" Height="230.283" Width="365.752">
+        Title="MainWindow" Height="290.283" Width="435.752">
     <Border Padding="8" Background="#FF333333">
-        <layout:HorizontalLayout>
-            <layout:VerticalLayout Margin="8" Spacing="10" Width="200">
-                <Button Height="40" Width="50" HorizontalAlignment="Left">Button 1</Button>
-                <Button>Button 2</Button>
-                <UIElement layout:FlexLayout.Flex="true"></UIElement>
-            </layout:VerticalLayout>
-            <Border Background="Red" layout:FlexLayout.Flex="true"></Border>
-        </layout:HorizontalLayout>
+        <TabControl>
+            <TabItem Header="Tab 1">
+                <layout:HorizontalLayout>
+                    <layout:VerticalLayout Margin="8" Spacing="10" Width="200">
+                        <Button Height="40" Width="50" HorizontalAlignment="Left">Button 1</Button>
+                        <Button>Button 2</Button>
+                        <UIElement layout:FlexLayout.Flex="true"></UIElement>
+                    </layout:VerticalLayout>
+                    <Border Background="Red" layout:FlexLayout.Flex="true"></Border>
+                </layout:HorizontalLayout>
+            </TabItem>
+
+            <TabItem Header="Tab 2">
+                <layout:HorizontalLayout>
+                    <TextBlock VerticalAlignment="Center">Hoi</TextBlock>
+                    <TextBlock>Hoi</TextBlock>
+                    <TextBlock>Hoi</TextBlock>
+                    <TextBlock layout:FlexLayout.Flex="True">Hoi</TextBlock>
+                </layout:HorizontalLayout>
+            </TabItem>
+
+            <TabItem Header="Tab 3">
+                <layout:VerticalLayout>
+                    <Button></Button>
+                    <ScrollViewer>
+                        <layout:HorizontalLayout Height="900">
+                            <TextBlock VerticalAlignment="Center">Hoi</TextBlock>
+                            <TextBlock>Hoi</TextBlock>
+                            <TextBlock>Hoi</TextBlock>
+                        </layout:HorizontalLayout>
+                    </ScrollViewer>
+                </layout:VerticalLayout>
+
+            </TabItem>
+
+
+            <TabItem Header="ScrollViewer">
+                <layout:VerticalLayout Spacing="8">
+                    <Button Height="60"></Button>
+                    <ScrollViewer layout:FlexLayout.Flex="True">
+                        <layout:HorizontalLayout Height="900">
+                            <TextBlock VerticalAlignment="Center">Hoi</TextBlock>
+                            <TextBlock>Hoi</TextBlock>
+                            <TextBlock>Hoi</TextBlock>
+                        </layout:HorizontalLayout>
+                    </ScrollViewer>
+                </layout:VerticalLayout>
+
+            </TabItem>
+
+        </TabControl>
+
     </Border>
 </Window>
 
