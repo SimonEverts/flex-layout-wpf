@@ -162,7 +162,11 @@ namespace FlexibleLayout.Wpf.Layout
             }
             else
             {
-                var scaleFactor = desiredContentSize.Longitudinal > 0 ? availableContentSize.Longitudinal / desiredContentSize.Longitudinal : 0;
+                var scaleFactor = 1.0;
+                if (!double.IsInfinity(availableContentSize.Longitudinal) && !double.IsNaN(availableContentSize.Longitudinal))
+                {
+                    scaleFactor = desiredContentSize.Longitudinal > 0 ? availableContentSize.Longitudinal / desiredContentSize.Longitudinal : 0;
+                }
 
                 foreach (var adapter in ChildAdapters)
                 {
